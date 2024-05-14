@@ -5,10 +5,20 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .serializer import *
 from rest_framework.views import APIView
+from BeemAfrica import Authorize, SMS
 
+# def pushMessage(otp, phone):
+#     Authorize('478040a68e5f755d',
+#               'ZTVkMzUwYWI5NjMwYjM2Zjc0ZTY1ZGQ5ZmQzZWNjNTMwYzRkOTEyYWRlODdhNWIxYmExYmQxOGZkMGNiODdiYg==')
+#     request = SMS.send_sms(
+#         'OTP for grocery app ' + otp,
+#         phone,
+#         sender_id='MC-Official'
+#     )
+#     return request
 
 class AddressView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     @staticmethod
     def post(request):
         data = request.data
@@ -27,9 +37,10 @@ class AddressView(APIView):
             serialized = AddressGetSerializer(instance=queryset, many=True)
             return Response(serialized.data)
         elif queryType == "single":
-            addressId = request.GET.get("addressId")
-            queryset = Address.objects.filter(id=addressId)
-            serialized = AddressGetSerializer(instance=queryset, many=True)
+            addressId = request.GET.get("userId")
+            queryset = Address.objects.get(admin=addressId)
+            print(queryset)
+            serialized = AddressGetSerializer(instance=queryset, many=False)
             return Response(serialized.data)
         elif queryType == "addressUsers":
             addressId = request.GET.get("addressId")
@@ -61,6 +72,7 @@ class AddressUserView(APIView):
         elif queryType == "single":
             addressId = request.GET.get("addressId")
             queryset = AddressUser.objects.filter(id=addressId)
+            print(queryset)
             serialized = AddressUserGetSerializer(instance=queryset, many=True)
             return Response(serialized.data)
         elif queryType == "userAddress":
@@ -70,7 +82,17 @@ class AddressUserView(APIView):
             return Response(serialized.data)
         else:
             return Response({"message": "Specify the querying type"})
-        
+
+
+def pushMessage(message, phone):
+    Authorize('478040a68e5f755d',
+                'ZTVkMzUwYWI5NjMwYjM2Zjc0ZTY1ZGQ5ZmQzZWNjNTMwYzRkOTEyYWRlODdhNWIxYmExYmQxOGZkMGNiODdiYg==')
+    request = SMS.send_sms(
+        message,
+        phone,
+        sender_id='MC-Official'
+    )
+    return request
 
 class AnnouncementView(APIView):
     permission_classes = [AllowAny]
@@ -79,10 +101,12 @@ class AnnouncementView(APIView):
         data = request.data
         serialized = AnnouncementPostSerializer(data=data)
         if serialized.is_valid():
+            print(data)
             try:
-                queryset = AddressUser.objects.filter(address=data['adress'])
+                queryset = AddressUser.objects.filter(address=data['address'])
                 print(queryset)
                 ##todo post push message to users
+                pushMessage(data['announcement'], "255757285500")
                 serialized.save()
                 return Response({"save": True})
             except AddressUser.DoesNotExist:
@@ -111,7 +135,7 @@ class AnnouncementView(APIView):
             return Response({"message": "Specify the querying type"})
         
 class ForumView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     @staticmethod
     def post(request):
         data = request.data
