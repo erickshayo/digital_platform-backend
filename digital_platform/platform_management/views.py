@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from .serializer import *
 from rest_framework.views import APIView
 from BeemAfrica import Authorize, SMS
+from rest_framework import status
 
 # def pushMessage(otp, phone):
 #     Authorize('478040a68e5f755d',
@@ -71,7 +72,7 @@ class AddressUserView(APIView):
             return Response(serialized.data)
         elif queryType == "single":
             addressId = request.GET.get("addressId")
-            queryset = AddressUser.objects.filter(id=addressId)
+            queryset = AddressUser.objects.filter(address=addressId)
             print(queryset)
             serialized = AddressUserGetSerializer(instance=queryset, many=True)
             return Response(serialized.data)
@@ -158,6 +159,11 @@ class ForumView(APIView):
             queryset = Forum.objects.filter(id=forumId)
             serialized = ForumGetSerializer(instance=queryset, many=True)
             return Response(serialized.data)
+        elif queryType == "single_address":
+            forumId = request.GET.get("addressId")
+            queryset = Forum.objects.filter(address=forumId)
+            serialized = ForumGetSerializer(instance=queryset, many=True)
+            return Response(serialized.data)
         elif queryType == "UserForums":
             userId = request.GET.get("userId")
             queryset = Forum.objects.filter(userId=userId)
@@ -166,9 +172,27 @@ class ForumView(APIView):
         else:
             return Response({"message": "Specify the querying type"})
         
+    def delete(self, request, pk):
+        try:
+            forum = Forum.objects.get(id=pk)
+            forum.delete()
+            return Response({"message": "Forum deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Forum.DoesNotExist:
+            return Response({"message": "Forum does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, pk):
+        try:
+            forum = Forum.objects.get(id=pk)
+            forum.isActive = False  # Deactivate forum
+            forum.save()
+            return Response({"message": "Forum deactivated successfully"})
+        except Forum.DoesNotExist:
+            return Response({"message": "Forum does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        
 
 class CommentView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     @staticmethod
     def post(request):
         data = request.data

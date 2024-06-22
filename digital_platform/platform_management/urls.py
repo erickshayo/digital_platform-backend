@@ -8,6 +8,8 @@ urlpatterns = [
     path('address_user', AddressUserView.as_view()),
     path('announcement', AnnouncementView.as_view()),
     path('forum', ForumView.as_view()),
+    path('forums/<uuid:pk>/', ForumView.as_view(), name='forum-detail'),
+    path('forums/<uuid:pk>/deactivate/', ForumView.as_view(), name='forum-deactivate'),
     path('comment', CommentView.as_view()),
     # path('lost_found', GetUserInformationByNida.as_view()),
 ]

@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer, ChangePasswordSerializer
+from .serializers import UserRoleSerializer, UserSerializer, ChangePasswordSerializer
 from django.contrib.auth import authenticate, login, update_session_auth_hash
 from .tokens import get_user_token
 from .models import User
@@ -88,6 +88,18 @@ class RegisterUser(APIView):
 
         message = {'save': False, 'errors': serializer.errors}
         return Response(message)
+    
+    
+class UserRoleUpdateAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, pk):
+        user = User.objects.get(pk=pk)
+        serializer = UserRoleSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 # {
 # "email":"hassan@gm++++++++++++++.com",
 # "password":"ha+++++++++++++++++++++3",
@@ -134,8 +146,12 @@ class LoginView(APIView):
 class UserInformation(APIView):
 
     @staticmethod
-    def get(request, query_type):
-        if query_type == 'single':
+    def get(request):
+        queryType = request.GET.get("queryType")
+        role = request.GET.get("role") 
+        print(queryType)
+        if queryType == 'single':
+
             try:
                 user_id = request.GET.get('user_id')
                 user = User.objects.get(id=user_id)
@@ -143,8 +159,11 @@ class UserInformation(APIView):
                 return Response({'message': 'User Does Not Exist'})
             return Response(UserSerializer(instance=user, many=False).data)
 
-        elif query_type == 'all':
-            queryset = User.objects.all()
+        elif queryType == 'all':
+            if role:  # Check if role is provided
+                queryset = User.objects.filter(role=role)
+            else:
+                queryset = User.objects.all()
             return Response(UserSerializer(instance=queryset, many=True).data)
 
         else:
