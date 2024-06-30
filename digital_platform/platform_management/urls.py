@@ -11,5 +11,6 @@ urlpatterns = [
     path('forums/<uuid:pk>/', ForumView.as_view(), name='forum-detail'),
     path('forums/<uuid:pk>/deactivate/', ForumView.as_view(), name='forum-deactivate'),
     path('comment', CommentView.as_view()),
-    # path('lost_found', GetUserInformationByNida.as_view()),
+    path('lost_found', LostAndFoundListCreate.as_view()),
+    path('statistics/', StatisticsView.as_view(), name='statistics'),
 ]

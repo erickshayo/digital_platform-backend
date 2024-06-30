@@ -97,6 +97,7 @@ class LostAndFoundGetSerializer(serializers.ModelSerializer):
 class LostAndFoundPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = LostAndFound
+        depth = 2
         fields = [
             "name",
             "userId",

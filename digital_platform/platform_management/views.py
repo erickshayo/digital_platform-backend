@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .serializer import *
 from rest_framework.views import APIView
+from rest_framework.generics import ListCreateAPIView
 from BeemAfrica import Authorize, SMS
 from rest_framework import status
 
@@ -86,12 +87,12 @@ class AddressUserView(APIView):
 
 
 def pushMessage(message, phone):
-    Authorize('478040a68e5f755d',
-                'ZTVkMzUwYWI5NjMwYjM2Zjc0ZTY1ZGQ5ZmQzZWNjNTMwYzRkOTEyYWRlODdhNWIxYmExYmQxOGZkMGNiODdiYg==')
+    Authorize('4ae92810061ef88a',
+                'YjIzMmQ5ZmYwMGU0NjNmYmQ3Y2FiMmE1YzM0ZGYxZTNmNzkyNTMyNTE2ZDYwYWI2ODJkMmRjNmE1MjE0YzYzZg==')
     request = SMS.send_sms(
         message,
         phone,
-        sender_id='MC-Official'
+        sender_id='JamiiConect'
     )
     return request
 
@@ -105,9 +106,15 @@ class AnnouncementView(APIView):
             print(data)
             try:
                 queryset = AddressUser.objects.filter(address=data['address'])
+                print('-----------------------------------------')
                 print(queryset)
-                ##todo post push message to users
-                pushMessage(data['announcement'], "255757285500")
+                
+                for user in queryset:
+                    print(user.userId.phone_number)
+                    message = f"JamiiConnect {user.address.name} Announcement \n {data['name']} \n {data['announcement']} \n {data['date']} {data['time']}"
+
+                    pushMessage(message, user.userId.phone_number)
+
                 serialized.save()
                 return Response({"save": True})
             except AddressUser.DoesNotExist:
@@ -221,3 +228,61 @@ class CommentView(APIView):
             return Response(serialized.data)
         else:
             return Response({"message": "Specify the querying type"})
+        
+
+class LostAndFoundListCreate(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        data = request.data
+        print(data)
+        
+        try:
+            # Retrieve the related User and Address instances
+            user = User.objects.get(id=data.get('userId'))
+            address = Address.objects.get(id=data.get('address'))
+
+            # Create the LostAndFound instance
+            lost_and_found = LostAndFound(
+                name=data.get('name'),
+                type=data.get('type'),
+                desc=data.get('desc'),
+                userId=user,
+                address=address,
+                picture=data.get('picture') if data.get('picture') != 'null' else None,
+                isActive=True
+            )
+            lost_and_found.save()
+
+            return Response({"save": True})
+        except Exception as e:
+            print(e)
+            return Response({"save": False, "error": str(e)})
+
+    def get(self, request):
+        queryset = LostAndFound.objects.all()
+        serialized = LostAndFoundPostSerializer(queryset, many=True)
+        return Response(serialized.data)
+
+
+class StatisticsView(APIView):
+    def get(self, request):
+        # Calculate totals
+        address_count = Address.objects.count()
+        address_user_count = AddressUser.objects.count()
+        announcement_count = Announcement.objects.count()
+        forum_count = Forum.objects.count()
+        comment_count = Comment.objects.count()
+        lost_and_found_count = LostAndFound.objects.count()
+
+        # Create response data
+        data = {
+            'total_addresses': address_count,
+            'total_address_users': address_user_count,
+            'total_announcements': announcement_count,
+            'total_forums': forum_count,
+            'total_comments': comment_count,
+            'total_lost_and_found': lost_and_found_count,
+        }
+
+        return Response(data)

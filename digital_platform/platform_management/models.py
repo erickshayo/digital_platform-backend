@@ -72,7 +72,7 @@ class LostAndFound(models.Model):
     createdAt = models.DateTimeField(auto_now=True)
     isActive = models.BooleanField(default=True)
     userId = models.ForeignKey(User, on_delete=models.CASCADE)
-    address = models.ForeignKey(Address, on_delete=models.CASCADE)
+    address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True)
     type = models.CharField(choices=TYPE, default='L')
     picture = models.ImageField(upload_to="uploads/", null=True, blank=True)
     desc = models.TextField()
