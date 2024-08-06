@@ -2,8 +2,6 @@ from django.db import models
 from user_management.models import User
 import uuid
 
-
-
 # Create your models here.
 class Address(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -15,7 +13,6 @@ class Address(models.Model):
 
     def __str__(self):
         return self.name
-
 
 
 class AddressUser(models.Model):

@@ -21,6 +21,7 @@ from rest_framework import status
 
 class AddressView(APIView):
     permission_classes = [AllowAny]
+    
     @staticmethod
     def post(request):
         data = request.data
@@ -35,13 +36,11 @@ class AddressView(APIView):
         queryType = request.GET.get("queryType")
         if queryType == "all":
             queryset = Address.objects.all()
-            print(queryset)
             serialized = AddressGetSerializer(instance=queryset, many=True)
             return Response(serialized.data)
         elif queryType == "single":
             addressId = request.GET.get("userId")
             queryset = Address.objects.get(admin=addressId)
-            print(queryset)
             serialized = AddressGetSerializer(instance=queryset, many=False)
             return Response(serialized.data)
         elif queryType == "addressUsers":
@@ -51,6 +50,26 @@ class AddressView(APIView):
             return Response(serialized.data)
         else:
             return Response({"message": "Specify the querying type"})
+
+    def put(self, request, pk=None):
+        try:
+            address = Address.objects.get(id=pk)
+            serialized = AddressPostSerializer(address, data=request.data, partial=True)
+            if serialized.is_valid():
+                serialized.save()
+                return Response({"update": True})
+            return Response({"update": False, "error": serialized.errors})
+        except Address.DoesNotExist:
+            return Response({"message": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk=None):
+        try:
+            address = Address.objects.get(id=pk)
+            address.delete()
+            return Response({"message": "Address deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Address.DoesNotExist:
+            return Response({"message": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class AddressUserView(APIView):
@@ -141,6 +160,15 @@ class AnnouncementView(APIView):
             return Response(serialized.data)
         else:
             return Response({"message": "Specify the querying type"})
+            
+    def delete(self, request, pk):
+        try:
+            forum = Announcement.objects.get(id=pk)
+            forum.delete()
+            return Response({"message": "Announcement deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Forum.DoesNotExist:
+            return Response({"message": "Announcement does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
         
 class ForumView(APIView):
     permission_classes = [AllowAny]
@@ -228,6 +256,15 @@ class CommentView(APIView):
             return Response(serialized.data)
         else:
             return Response({"message": "Specify the querying type"})
+        
+    
+    def delete(self, request, pk):
+        try:
+            comment = Comment.objects.get(id=pk)
+            comment.delete()
+            return Response({"message": "Comment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Comment.DoesNotExist:
+            return Response({"message": "Comment does not exist"}, status=status.HTTP_404_NOT_FOUND)
         
 
 class LostAndFoundListCreate(APIView):
